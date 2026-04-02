@@ -1,5 +1,8 @@
 print("de rucula")
 
+###
+# BORRAR ESTO PQ ME DIO PAJA METERLO EN OTRO LADO JE
+###
 # comandos que use para probar
 
 # docker build -t servidor-hit2 .
