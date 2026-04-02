@@ -1,0 +1,5 @@
+Flask==3.0.3
+pytest==8.2.0
+pytest-testcontainers==0.3.0
+testcontainers==4.7.2
+requests==2.32.3

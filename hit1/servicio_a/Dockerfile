@@ -3,10 +3,11 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir flask
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app/app_a.py .
+COPY app/ .
 
-EXPOSE 5001
+EXPOSE 8080
 
-CMD ["python", "app_a.py"]
+CMD ["python", "servicio_inversion_texto.py"]
