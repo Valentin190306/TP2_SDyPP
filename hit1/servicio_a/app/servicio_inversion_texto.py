@@ -2,6 +2,15 @@ from flask import Flask, request, jsonify
 import logging
 import sys
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",    
+    handlers=[logging.StreamHandler(sys.stdout)]
+    )
+
+logger = logging.getLogger("ServicioInvertirTexto")
+
+
 app = Flask(__name__)
 
 # no me olvide de lo artesanal Croch, tranquilo
@@ -9,6 +18,8 @@ def invertirString(txt):
     resultado = ""
     for char in txt:
         resultado = char + resultado
+    
+    logger.info(f"Texto invertido: {resultado}")
     return resultado
 
 @app.route('/invertirTexto', methods=['POST'])
