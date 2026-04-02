@@ -38,8 +38,8 @@ jobs:
           context: ./hit1/servidor
           push: true
           tags: |
-            valen190306/hit1-servidor:latest
-            valen190306/hit1-servidor:${{ github.sha }}
+            valen190306/sd-tp2-hit1-servidor:latest
+            valen190306/sd-tp2-hit1-servidor:${{ github.sha }}
 
   worker_a:
     runs-on: ubuntu-latest
@@ -70,8 +70,8 @@ jobs:
           context: ./hit1/servicio_a
           push: true
           tags: |
-            valen190306/hit1-servicio-a:latest
-            valen190306/hit1-servicio-a:${{ github.sha }}
+            valen190306/sd-tp2-hit1-servicio-a:latest
+            valen190306/sd-tp2-hit1-servicio-a:${{ github.sha }}
 
   worker_b:
     runs-on: ubuntu-latest
@@ -102,5 +102,5 @@ jobs:
           context: ./hit1/servicio_b
           push: true
           tags: |
-            valen190306/hit1-servicio-b:latest
-            valen190306/hit1-servicio-b:${{ github.sha }}
+            valen190306/sd-tp2-hit1-servicio-b:latest
+            valen190306/sd-tp2-hit1-servicio-b:${{ github.sha }}
