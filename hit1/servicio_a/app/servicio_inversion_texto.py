@@ -23,7 +23,7 @@ def invertirString(txt):
     return resultado
 
 @app.route('/invertirTexto', methods=['POST'])
-def ejecutar_tarea():
+def ejecutarTarea():
     data = request.get_json()
     texto = data.get('texto', '')
     resultado = invertirString(texto)
