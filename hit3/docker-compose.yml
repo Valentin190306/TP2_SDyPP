@@ -1,0 +1,48 @@
+services:
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - servidor_1
+      - servidor_2
+      - servidor_3
+    networks:
+      - red_interna
+
+  servidor_1:
+    image: valen190306/sd-tp2-hit1-servidor:latest
+    environment:
+      - NODE_ID=1
+      - PEERS=servidor_2:8080,servidor_3:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - red_interna
+
+  servidor_2:
+    image: valen190306/sd-tp2-hit1-servidor:latest
+    environment:
+      - NODE_ID=2
+      - PEERS=servidor_1:8080,servidor_3:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - red_interna
+
+  servidor_3:
+    image: valen190306/sd-tp2-hit1-servidor:latest
+    environment:
+      - NODE_ID=3
+      - PEERS=servidor_1:8080,servidor_2:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - red_interna
+
+networks:
+  red_interna:
+    driver: bridge
