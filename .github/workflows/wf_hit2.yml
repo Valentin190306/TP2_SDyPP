@@ -1,11 +1,11 @@
-name: HIT1 CI/CD
+name: HIT2 CI/CD
 
 on:
   push:
     branches: [ "dev", "main" ]
     paths:
-      - 'hit1/**'
-      - '.github/workflows/wf_hit1.yml'
+      - 'hit2/**'
+      - '.github/workflows/wf_hit2.yml'
 
 jobs:
 
@@ -35,7 +35,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
-          context: ./hit1/servicio_a
+          context: ./hit2/servicio_a
           push: true
           tags: |
             valen190306/sd-tp2-hit1-servicio-a:latest
@@ -52,7 +52,7 @@ jobs:
 
       - name: Install & test
         run: |
-          cd hit1/servicio_b
+          cd hit2/servicio_b
           pip install -r requirements.txt
           pytest tests/
 
@@ -67,7 +67,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
-          context: ./hit1/servicio_b
+          context: ./hit2/servicio_b
           push: true
           tags: |
             valen190306/sd-tp2-hit1-servicio-b:latest
@@ -85,7 +85,7 @@ jobs:
 
       - name: Install & test
         run: |
-          cd hit1/servidor
+          cd hit2/servidor
           pip install -r requirements.txt
           pytest tests/
 
@@ -100,8 +100,8 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
-          context: ./hit1/servidor
+          context: ./hit2/servidor
           push: true
           tags: |
-            valen190306/sd-tp2-hit1-servidor:latest
-            valen190306/sd-tp2-hit1-servidor:${{ github.sha }}
+            valen190306/sd-tp2-hit2-servidor:latest
+            valen190306/sd-tp2-hit2-servidor:${{ github.sha }}
