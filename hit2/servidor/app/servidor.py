@@ -181,7 +181,7 @@ Cuando termina, libera el slot y deposita el resultado en el Event.
 def worker_loop():
     while True:
         # Bloquea hasta que haya una tarea en la cola
-        prioridad, tarea_id, datos, result_event = task_queue.get()
+        tarea_id, datos, result_event = task_queue.get()
 
         # Ocupa un slot del pool (bloquea si todos están ocupados)
         worker_semaphore.acquire()
@@ -275,8 +275,7 @@ def health():
 @app.route('/metricas', methods=['GET'])
 def ver_metricas():
     """
-    Devuelve throughput actual: tareas completadas por minuto.
-    Útil para el punto 4 del TP (variar N workers y medir).
+    Devuelve throughput actual: tareas completadas por minuto. (variar N workers y medir).
     """
     with metricas["lock"]:
         completadas = metricas["completadas"]
