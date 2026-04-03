@@ -181,7 +181,8 @@ Cuando termina, libera el slot y deposita el resultado en el Event.
 def worker_loop():
     while True:
         # Bloquea hasta que haya una tarea en la cola
-        tarea_id, datos, result_event = task_queue.get()
+        #tarea_id, datos, result_event = task_queue.get()
+        ts_local, tarea_id, datos, result_event = task_queue.get()   
 
         # Ocupa un slot del pool (bloquea si todos están ocupados)
         worker_semaphore.acquire()
