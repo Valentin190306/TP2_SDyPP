@@ -5,7 +5,6 @@ import logging
 import subprocess
 import time
 import uuid
-import socket
 import requests
 
 from flask import Flask, request, jsonify
