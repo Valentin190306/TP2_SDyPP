@@ -20,14 +20,14 @@ logger = logging.getLogger("Servidor")
 # ---------------- CONFIG SERVICIOS ----------------
 SERVICIOS = {
     "hash": {
-        "imagen": "usuario/servicio-hash:latest",
+        "imagen": "valen190306/sd-tp2-hit1-servicio-b:latest",
         "endpoint": "/hash",
-        "port": 5000
+        "port": 8080
     },
     "texto": {
-        "imagen": "usuario/servicio-texto:latest",
-        "endpoint": "/procesar",
-        "port": 5000
+        "imagen": "valen190306/sd-tp2-hit1-servicio-a:latest",
+        "endpoint": "/invertirTexto",
+        "port": 8080
     }
 }
 
