@@ -46,13 +46,14 @@ SERVICIOS = {
 
 # ---------------- UTILS ----------------
 
+"""
 def get_free_port():
     s = socket.socket()
     s.bind(('', 0))
     port = s.getsockname()[1]
     s.close()
     return port
-
+"""
 
 def wait_for_service(url, timeout=10):
     start = time.time()
@@ -172,7 +173,7 @@ def ejecutaTareaRemota():
     container_port = config["port"]
 
     container_name = f"tmp-{uuid.uuid4().hex[:8]}"
-    host_port = get_free_port()
+    #host_port = get_free_port()
 
     logger.info(f"[{servicio_id}] Ejecutando en contenedor {container_name}")
 
@@ -185,22 +186,39 @@ def ejecutaTareaRemota():
             stderr=subprocess.PIPE
         )
 
-        # 2. Run contenedor
-        subprocess.run([
+        # 2. Run contenedor SIN mapear puertos al host
+        result = subprocess.run([
             "docker", "run", "-d",
             "--name", container_name,
-            "-p", f"{host_port}:{container_port}",
+            "--network", "hit3_red_interna",  # ← agregar esto
             imagen
-        ], check=True)
+        ], capture_output=True, text=True)
 
-        # 3. Esperar disponibilidad
-        health_url = f"http://localhost:{host_port}/health"
+        if result.returncode != 0:
+            raise Exception(f"Fallo docker run: {result.stderr.strip()}")
+
+        # 3. Obtener IP interna del contenedor
+        ip_info = subprocess.run(
+            ["docker", "inspect", "-f",
+            "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}",
+            container_name],
+            capture_output=True, text=True, check=True
+        )
+        container_ip = ip_info.stdout.strip()
+
+        if not container_ip:
+            raise Exception("No se pudo obtener la IP del contenedor")
+
+        logger.info(f"[{servicio_id}] IP interna: {container_ip}")
+
+        # 4. Esperar disponibilidad usando IP interna
+        health_url = f"http://{container_ip}:{container_port}/health"
 
         if not wait_for_service(health_url):
             raise Exception("Timeout esperando servicio")
 
-        # 4. Ejecutar tarea
-        url = f"http://localhost:{host_port}{endpoint}"
+        # 5. Ejecutar tarea
+        url = f"http://{container_ip}:{container_port}{endpoint}"
 
         response = requests.post(
             url,
