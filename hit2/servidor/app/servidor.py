@@ -1,4 +1,5 @@
 import sys
+import os
 import logging
 import subprocess
 import time
@@ -18,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger("Servidor")
 
 # ---------------- CONFIG ----------------
-MAX_WORKERS = 4  # configurable: 1, 2, 4, 8
+MAX_WORKERS = int(os.getenv("MAX_WORKERS", 4))
 
 SERVICIOS = {
     "hash": {
