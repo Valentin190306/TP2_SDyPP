@@ -14,7 +14,8 @@ services:
       - red_interna
 
   servidor_1:
-    build: ./servidor   # en lugar de image: valen190306/...    image: valen190306/sd-tp2-hit3-servidor:latest
+    image: valen190306/sd-tp2-hit3-servidor:latest
+    build: ./servidor
     environment:
       - NODE_ID=1
       - PEERS=servidor_2:8080,servidor_3:8080
@@ -24,6 +25,7 @@ services:
       - red_interna
 
   servidor_2:
+    image: valen190306/sd-tp2-hit3-servidor:latest
     build: ./servidor
     environment:
       - NODE_ID=2
@@ -34,6 +36,7 @@ services:
       - red_interna
 
   servidor_3:
+    image: valen190306/sd-tp2-hit3-servidor:latest
     build: ./servidor
     environment:
       - NODE_ID=3
