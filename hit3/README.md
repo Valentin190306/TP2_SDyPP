@@ -64,6 +64,10 @@ nginx (puerto 80) — balanceador round-robin
 
 Los tres nodos se comunican entre sí por la red interna de Docker para ejecutar el algoritmo Bully. nginx distribuye los requests entrantes entre los nodos disponibles.
 
+#### Diagrama de arquitectura
+
+![Diagrama de arquitectura](img/image.png)
+
 ---
 
 ### 4. Componentes implementados
