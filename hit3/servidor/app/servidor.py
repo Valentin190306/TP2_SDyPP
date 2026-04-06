@@ -10,6 +10,7 @@ import requests
 from flask import Flask, request, jsonify
 
 # ---------------- LOGGING ----------------
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
@@ -30,6 +31,7 @@ estado_bully = {
 }
 
 # ---------------- CONFIG SERVICIOS ----------------
+
 SERVICIOS = {
     "hash": {
         "imagen": "valen190306/sd-tp2-hit1-servicio-b:latest",
@@ -44,15 +46,6 @@ SERVICIOS = {
 }
 
 # ---------------- UTILS ----------------
-
-"""
-def get_free_port():
-    s = socket.socket()
-    s.bind(('', 0))
-    port = s.getsockname()[1]
-    s.close()
-    return port
-"""
 
 def wait_for_service(url, timeout=10):
     start = time.time()

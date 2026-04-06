@@ -60,6 +60,10 @@ Archivos principales:
 | Relojes de Lamport | Cada request incluye `lamport_ts`. El servidor actualiza su reloj con `max(local, cliente) + 1` y devuelve su propio timestamp en la respuesta |
 | Métricas de throughput | Endpoint `/metricas` que expone tareas completadas, tiempo transcurrido y throughput por minuto |
 
+#### Diagrama de arquitectura
+
+![Diagrama de arquitectura](img/image.png)
+
 ---
 
 ### 4. Ejecución del servidor

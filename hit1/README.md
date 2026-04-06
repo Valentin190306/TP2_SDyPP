@@ -53,6 +53,7 @@ Comandos según sistema operativo:
 
 ### 2. Estructura de archivos
 
+```
 hit1/
 ├── servicio_a/
 │   ├── app/
@@ -75,6 +76,11 @@ hit1/
 │   ├── Dockerfile
 │   └── requirements.txt
 └── README.md
+```
+
+#### Diagrama de arquitectura
+
+![Diagrama de arquitectura](img/image.png)
 
 ### 3. Servicios disponibles
 
