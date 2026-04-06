@@ -123,7 +123,7 @@ def monitorear_lider():
             iniciar_eleccion()
             continue
 
-        # Busco al peer que es el líder y le hago ping
+        # Busco al peer que es el líder
         peer_lider = next((p for p in PEERS if str(lider) in p), None)
 
         if peer_lider is None:
@@ -289,11 +289,10 @@ def health():
 
 
 if __name__ == '__main__':
-    # Arrancar monitor de líder en background
     threading.Thread(target=monitorear_lider, daemon=True).start()
     
-    # Pequeña espera para que todos los peers levanten antes de la primera elección
-    time.sleep(3)
+    # Nodo 1 espera 1s, Nodo 2 espera 2s, Nodo 3 espera 3s
+    time.sleep(NODE_ID * 1)
     iniciar_eleccion()
-
+    
     app.run(host='0.0.0.0', port=8080, threaded=True)
