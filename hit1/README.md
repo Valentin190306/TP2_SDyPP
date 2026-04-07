@@ -82,6 +82,8 @@ hit1/
 
 ![Diagrama de arquitectura](img/image.png)
 
+---
+
 ### 3. Servicios disponibles
 
 | Servicio | Imagen Docker | Endpoint | Descripción |
@@ -92,6 +94,8 @@ hit1/
 ---
 
 ### 4. Ejecución del servidor
+
+* IMPORTANTE: Si se ejecuta desde Windows Docker Desktop debe estar en ejecución
 
 Build imagen del servidor:
 ```bash y Windows
