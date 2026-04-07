@@ -45,7 +45,8 @@ def wait_for_service(url, timeout=10):
     while time.time() - start < timeout:
         try:
             r = requests.get(url, timeout=1)
-            if r.status_code == 200:
+            # Aceptamos 404 o 405 como prueba de que el servidor Flask del worker está vivo
+            if r.status_code in [200, 404, 405]:
                 return True
         except:
             time.sleep(0.5)
@@ -89,22 +90,31 @@ def ejecutaTareaRemota():
             stderr=subprocess.PIPE
         )
 
-        # 2. Run contenedor
+        # 2. Run contenedor (SIN mapear puertos, Docker maneja la red interna)
         subprocess.run([
             "docker", "run", "-d",
             "--name", container_name,
-            "-p", f"{host_port}:{container_port}",
             imagen
         ], check=True)
 
-        # 3. Esperar disponibilidad
-        health_url = f"http://localhost:{host_port}/health"
+        # 3. Obtener la IP interna del contenedor worker
+        ip_info = subprocess.run(
+            ["docker", "inspect", "-f", "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}", container_name],
+            capture_output=True, text=True, check=True
+        )
+        container_ip = ip_info.stdout.strip()
+
+        if not container_ip:
+            raise Exception("No se pudo obtener la IP del contenedor worker")
+
+        # 4. Esperar disponibilidad en la IP interna
+        health_url = f"http://{container_ip}:{container_port}/health"
 
         if not wait_for_service(health_url):
             raise Exception("Timeout esperando servicio")
 
-        # 4. Ejecutar tarea
-        url = f"http://localhost:{host_port}{endpoint}"
+        # 5. Ejecutar tarea usando la IP interna
+        url = f"http://{container_ip}:{container_port}{endpoint}"
 
         response = requests.post(
             url,
@@ -112,6 +122,8 @@ def ejecutaTareaRemota():
             timeout=5
         )
 
+        # Verificar que la petición fue exitosa
+        response.raise_for_status()
         result = response.json()
 
         logger.info(f"[{servicio_id}] Resultado obtenido")
@@ -125,7 +137,14 @@ def ejecutaTareaRemota():
         logger.error(f"Error Docker: {e.stderr}")
         return jsonify({
             "error": "Fallo en ejecución Docker",
-            "detalle": str(e.stderr)
+            "detalle": str(e.stderr) if e.stderr else str(e)
+        }), 500
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error HTTP en worker: {str(e)}")
+        return jsonify({
+            "error": "Error comunicacion HTTP",
+            "detalle": str(e)
         }), 500
 
     except Exception as e:
