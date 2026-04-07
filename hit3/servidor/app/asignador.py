@@ -33,7 +33,7 @@ def _url_servicio(node_id, servicio_id):
         peer = next((p for p in PEERS if f"_{node_id}:" in p), None)
         if peer is None:
             raise ValueError(f"No se encontró peer para nodo {node_id}")
-        host = peer.split(":")[0]  # ej: "servidor_2"
+        # host = peer.split(":")[0]  # ej: "servidor_2
         # Convencion: servicio_a_N y servicio_b_N en puerto 8080
         svc = "a" if servicio_id == "texto" else "b"
         base = f"http://servicio_{svc}_{node_id}:8080"
@@ -51,11 +51,13 @@ def elegir_nodo():
 def incrementar(node_id):
     with _lock:
         _registro[node_id] = _registro.get(node_id, 0) + 1
-
+        logger.info(f"Estado de registro {dict(_registro)}")
 
 def decrementar(node_id):
     with _lock:
         _registro[node_id] = max(0, _registro.get(node_id, 0) - 1)
+        logger.info(f"Estado de registro {dict(_registro)}")
+
 
 
 def actualizar_desde_peer(node_id, tareas_activas):
@@ -70,15 +72,24 @@ def estado_registro():
 
 
 def ejecutar_tarea(node_id, servicio_id, payload):
-    """
-    Ejecuta la tarea en el nodo indicado.
-    Si es el nodo local usa sus servicios directamente.
-    Si es un peer le delega via HTTP.
-    """
     if node_id == NODE_ID:
         return _ejecutar_local(servicio_id, payload)
     else:
-        return _delegar_a_peer(node_id, servicio_id, payload)
+        try:
+            return _delegar_a_peer(node_id, servicio_id, payload)
+        except Exception as e:
+            logger.warning(f"Nodo {node_id} no responde, marcando como caído y reintentando")
+            _marcar_caido(node_id)
+            # Reintenta con el siguiente nodo disponible
+            nuevo_nodo = elegir_nodo()
+            if nuevo_nodo == node_id:
+                raise Exception("No hay nodos disponibles") from e
+            return ejecutar_tarea(nuevo_nodo, servicio_id, payload)
+
+
+def _marcar_caido(node_id):
+    with _lock:
+        _registro[node_id] = 999  # valor alto para que no sea elegido
 
 
 def _ejecutar_local(servicio_id, payload):
