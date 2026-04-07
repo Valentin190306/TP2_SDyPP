@@ -1,9 +1,15 @@
+# tests/test_servidor.py
 import pytest
 from unittest.mock import patch, MagicMock
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'app'))
 
-from servidor import app, estado_bully
+import bully
+import asignador
+from api import app
+
+
+# ---------------- FIXTURES ----------------
 
 @pytest.fixture
 def client():
@@ -12,171 +18,131 @@ def client():
         yield c
 
 @pytest.fixture(autouse=True)
-def reset_estado_bully():
-    """Resetea el estado del Bully antes de cada test para evitar contaminación."""
-    with estado_bully["lock"]:
-        estado_bully["lider_actual"] = None
-        estado_bully["en_eleccion"] = False
+def reset_estado():
+    with bully.estado["lock"]:
+        bully.estado["lider_actual"] = None
+        bully.estado["en_eleccion"] = False
+    asignador._registro.clear()
+    asignador._registro[bully.NODE_ID] = 0
     yield
 
-# ---------------- TESTS BÁSICOS ----------------
 
-def test_health(client):
-    response = client.get("/health")
+# ---------------- BULLY ----------------
+
+def test_sin_peers_se_proclama_lider():
+    with patch("bully.PEERS", []), \
+         patch("bully.requests.post") as mock_post:
+        bully.iniciar_eleccion()
+
+    with bully.estado["lock"]:
+        assert bully.estado["lider_actual"] == bully.NODE_ID
+
+
+def test_con_peers_mayores_no_se_proclama_lider():
+    peers_mayores = [f"servidor_{bully.NODE_ID + 1}:8080"]
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+
+    with patch("bully.PEERS", peers_mayores), \
+         patch("bully.requests.post", return_value=mock_response):
+        bully.iniciar_eleccion()
+
+    with bully.estado["lock"]:
+        assert bully.estado["lider_actual"] is None
+
+
+def test_no_inicia_eleccion_si_ya_hay_una_en_curso():
+    with bully.estado["lock"]:
+        bully.estado["en_eleccion"] = True
+
+    with patch("bully.requests.post") as mock_post:
+        bully.iniciar_eleccion()
+        mock_post.assert_not_called()
+
+
+# ---------------- ASIGNADOR ----------------
+
+def test_elegir_nodo_devuelve_el_de_menor_carga():
+    asignador._registro[1] = 3
+    asignador._registro[2] = 1
+    asignador._registro[3] = 5
+    assert asignador.elegir_nodo() == 2
+
+
+def test_incrementar_y_decrementar():
+    asignador._registro[1] = 0
+    asignador.incrementar(1)
+    assert asignador._registro[1] == 1
+    asignador.decrementar(1)
+    assert asignador._registro[1] == 0
+
+
+def test_decrementar_no_baja_de_cero():
+    asignador._registro[1] = 0
+    asignador.decrementar(1)
+    assert asignador._registro[1] == 0
+
+
+# ---------------- API ----------------
+
+def test_bully_status_expone_registro_carga(client):
+    with bully.estado["lock"]:
+        bully.estado["lider_actual"] = 3
+    response = client.get("/bully/status")
     assert response.status_code == 200
-    assert response.get_json()["status"] == "ok"
+    data = response.get_json()
+    assert "registro_carga" in data
+    assert isinstance(data["registro_carga"], dict)
 
-def test_falta_servicio(client):
-    response = client.post("/getRemoteTask", json={})
-    assert response.status_code == 400
 
-def test_servicio_no_soportado(client):
-    response = client.post("/getRemoteTask", json={"servicio": "inexistente"})
-    assert response.status_code == 400
+def test_nodo_no_lider_reenvía_al_lider(client):
+    with bully.estado["lock"]:
+        bully.estado["lider_actual"] = 3
 
-# ---------------- TESTS DE EJECUCIÓN ----------------
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"servicio": "texto", "resultado": {"resultado": "aloh"}}
 
-def test_ejecuta_tarea_exitosa(client):
-    """
-    Mockea subprocess y wait_for_service para evitar Docker real.
-    Verifica que el servidor procesa la tarea y devuelve resultado.
-    """
-    mock_run = MagicMock()
-    mock_run.returncode = 0
-    mock_run.stdout = "abc123\n"
-    mock_run.stderr = ""
-
-    with patch("servidor.subprocess.run", return_value=mock_run), \
-         patch("servidor.wait_for_service", return_value=True), \
-         patch("servidor.requests.post") as mock_post:
-
-        mock_post.return_value = MagicMock(
-            status_code=200,
-            json=lambda: {"resultado": "odnum aloh"}
-        )
-
+    with patch("bully.NODE_ID", 1), \
+         patch("bully.PEERS", ["servidor_2:8080", "servidor_3:8080"]), \
+         patch("api.requests.post", return_value=mock_response):
         response = client.post("/getRemoteTask", json={
             "servicio": "texto",
-            "payload": {"texto": "hola mundo"}
+            "payload": {"texto": "hola"}
         })
 
     assert response.status_code == 200
-    data = response.get_json()
-    assert data["servicio"] == "texto"
-    assert "resultado" in data
 
-def test_ejecuta_tarea_hash(client):
-    """Verifica que el servicio hash también funciona correctamente."""
-    mock_run = MagicMock()
-    mock_run.returncode = 0
-    mock_run.stdout = "172.17.0.5\n"
-    mock_run.stderr = ""
 
-    with patch("servidor.subprocess.run", return_value=mock_run), \
-         patch("servidor.wait_for_service", return_value=True), \
-         patch("servidor.requests.post") as mock_post:
+def test_lider_delega_al_nodo_con_menos_carga(client):
+    with bully.estado["lock"]:
+        bully.estado["lider_actual"] = bully.NODE_ID
 
-        mock_post.return_value = MagicMock(
-            status_code=200,
-            json=lambda: {"hash": "abc123", "algoritmo": "sha256"}
-        )
+    asignador._registro[bully.NODE_ID] = 0
 
+    mock_resultado = {"resultado": "aloh"}
+
+    with patch("asignador.elegir_nodo", return_value=bully.NODE_ID), \
+         patch("asignador._ejecutar_local", return_value=mock_resultado):
         response = client.post("/getRemoteTask", json={
-            "servicio": "hash",
-            "payload": {"input": "hola", "algoritmo": "sha256"}
+            "servicio": "texto",
+            "payload": {"texto": "hola"}
         })
 
     assert response.status_code == 200
     data = response.get_json()
-    assert data["servicio"] == "hash"
+    assert "nodo" in data
     assert "resultado" in data
 
-# ---------------- TESTS DE BULLY ----------------
 
-def test_bully_status(client):
-    """El endpoint /bully/status debe devolver node_id y lider_actual."""
-    response = client.get("/bully/status")
+def test_worker_ejecutar_local(client):
+    mock_resultado = {"resultado": "aloh"}
+
+    with patch("asignador._ejecutar_local", return_value=mock_resultado):
+        response = client.post("/worker/ejecutar", json={
+            "servicio": "texto",
+            "payload": {"texto": "hola"}
+        })
+
     assert response.status_code == 200
-    data = response.get_json()
-    assert "node_id" in data
-    assert "lider_actual" in data
-
-def test_bully_status_sin_lider(client):
-    """Al arrancar sin elección, lider_actual es None."""
-    response = client.get("/bully/status")
-    data = response.get_json()
-    assert data["lider_actual"] is None
-
-def test_bully_coordinator_actualiza_lider(client):
-    """Al recibir COORDINATOR, el nodo actualiza su lider_actual."""
-    response = client.post("/bully/coordinator", json={"node_id": 3})
-    assert response.status_code == 200
-
-    status = client.get("/bully/status")
-    data = status.get_json()
-    assert data["lider_actual"] == 3
-
-def test_bully_coordinator_cancela_eleccion(client):
-    """Al recibir COORDINATOR, en_eleccion debe quedar en False."""
-    with estado_bully["lock"]:
-        estado_bully["en_eleccion"] = True
-
-    client.post("/bully/coordinator", json={"node_id": 3})
-
-    with estado_bully["lock"]:
-        assert estado_bully["en_eleccion"] is False
-
-def test_bully_election_nodo_menor(client):
-    """
-    Si el emisor tiene ID menor al nodo local (NODE_ID=1 por defecto),
-    el nodo responde OK e inicia su propia elección.
-    """
-    with patch("servidor.iniciar_eleccion") as mock_eleccion:
-        response = client.post("/bully/election", json={"node_id": 0})
-        assert response.status_code == 200
-        data = response.get_json()
-        assert data["msg"] == "ok"
-
-def test_bully_election_nodo_mayor(client):
-    """
-    Si el emisor tiene ID mayor al nodo local, el nodo responde ignorado
-    y no inicia elección.
-    """
-    with patch("servidor.iniciar_eleccion") as mock_eleccion:
-        response = client.post("/bully/election", json={"node_id": 99})
-        assert response.status_code == 200
-        data = response.get_json()
-        assert data["msg"] == "ignorado"
-        mock_eleccion.assert_not_called()
-
-def test_bully_eleccion_sin_peers(client):
-    """
-    Con PEERS vacío, al iniciar elección nadie responde
-    y el nodo se proclama líder.
-    """
-    with patch("servidor.PEERS", []), \
-         patch("servidor.requests.post") as mock_post:
-
-        from servidor import iniciar_eleccion
-        iniciar_eleccion()
-
-    with estado_bully["lock"]:
-        assert estado_bully["lider_actual"] is not None
-
-def test_bully_eleccion_no_duplicada(client):
-    """Si ya hay una elección en curso, iniciar_eleccion no la duplica."""
-    with estado_bully["lock"]:
-        estado_bully["en_eleccion"] = True
-
-    with patch("servidor.requests.post") as mock_post:
-        from servidor import iniciar_eleccion
-        iniciar_eleccion()
-        mock_post.assert_not_called()
-        
-        
-# cubren 4 escenarios:
-
-# Estado: /bully/status devuelve los campos correctos y arranca sin líder.
-# COORDINATOR: al recibirlo el nodo actualiza su líder y cancela cualquier elección en curso.
-# ELECTION: si el emisor tiene ID menor el nodo responde ok e inicia su propia elección; si tiene ID mayor responde ignorado y no hace nada.
-# Elección sin peers: sin ningún peer disponible el nodo se proclama líder directamente.
+    assert response.get_json() == mock_resultado

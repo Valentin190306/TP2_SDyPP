@@ -14,35 +14,73 @@ services:
       - red_interna
 
   servidor_1:
-    image: valen190306/sd-tp2-hit3-servidor:latest
     build: ./servidor
     environment:
       - NODE_ID=1
       - PEERS=servidor_2:8080,servidor_3:8080
+      - SERVICIO_A_URL=http://servicio_a_1:8080
+      - SERVICIO_B_URL=http://servicio_b_1:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - servicio_a_1
+      - servicio_b_1
+    networks:
+      - red_interna
+
+  servicio_a_1:
+    image: valen190306/sd-tp2-hit1-servicio-a:latest
+    networks:
+      - red_interna
+
+  servicio_b_1:
+    image: valen190306/sd-tp2-hit1-servicio-b:latest
     networks:
       - red_interna
 
   servidor_2:
-    image: valen190306/sd-tp2-hit3-servidor:latest
     build: ./servidor
     environment:
       - NODE_ID=2
       - PEERS=servidor_1:8080,servidor_3:8080
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - SERVICIO_A_URL=http://servicio_a_2:8080
+      - SERVICIO_B_URL=http://servicio_b_2:8080
+    depends_on:
+      - servicio_a_2
+      - servicio_b_2
+    networks:
+      - red_interna
+
+  servicio_a_2:
+    image: valen190306/sd-tp2-hit1-servicio-a:latest
+    networks:
+      - red_interna
+
+  servicio_b_2:
+    image: valen190306/sd-tp2-hit1-servicio-b:latest
     networks:
       - red_interna
 
   servidor_3:
-    image: valen190306/sd-tp2-hit3-servidor:latest
     build: ./servidor
     environment:
       - NODE_ID=3
       - PEERS=servidor_1:8080,servidor_2:8080
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - SERVICIO_A_URL=http://servicio_a_3:8080
+      - SERVICIO_B_URL=http://servicio_b_3:8080
+    depends_on:
+      - servicio_a_3
+      - servicio_b_3
+    networks:
+      - red_interna
+
+  servicio_a_3:
+    image: valen190306/sd-tp2-hit1-servicio-a:latest
+    networks:
+      - red_interna
+
+  servicio_b_3:
+    image: valen190306/sd-tp2-hit1-servicio-b:latest
     networks:
       - red_interna
 
