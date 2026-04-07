@@ -36,12 +36,6 @@ SERVICIOS = {
 
 # ---------------- RELOJ DE LAMPORT ----------------
 class RelojLamport:
-    """
-    Reloj lógico de Lamport.
-    - send_event(): llamar antes de enviar un mensaje. Incrementa el reloj.
-    - receive_event(ts): llamar al recibir un mensaje con timestamp ts.
-      Actualiza el reloj a max(local, ts) + 1.
-    """
     def __init__(self):
         self._clock = 0
         self._lock = threading.Lock()
@@ -63,14 +57,7 @@ class RelojLamport:
 reloj = RelojLamport()
 
 # ---------------- COLA CON EXCLUSIÓN MUTUA ----------------
-"""
-Python's queue.PriorityQueue ya es thread-safe internamente,
-pero usamos un mutex explícito adicional para el encolado
-para cumplir el requisito de exclusión mutua visible del TP.
 
-Cada item en la cola es una tupla: (lamport_ts, tarea_id, datos, future)
-Se ordena por lamport_ts, garantizando FIFO lógico según Lamport.
-"""
 task_queue = queue.PriorityQueue()
 queue_mutex = threading.Lock()
 
@@ -105,7 +92,7 @@ def wait_for_service(url, timeout=10):
             time.sleep(0.5)
     return False
 
-# ---------------- EJECUCIÓN DE TAREA (mismo Hit #1) ----------------
+# ---------------- EJECUCIÓN DE TAREA ----------------
 
 def ejecutar_en_contenedor(servicio_id, payload, tarea_id):
     config = SERVICIOS[servicio_id]
