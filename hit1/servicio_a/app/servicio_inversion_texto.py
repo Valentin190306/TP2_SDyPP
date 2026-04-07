@@ -13,7 +13,6 @@ logger = logging.getLogger("ServicioInvertirTexto")
 
 app = Flask(__name__)
 
-# no me olvide de lo artesanal Croch, tranquilo
 def invertirString(txt):
     resultado = ""
     for char in txt:
