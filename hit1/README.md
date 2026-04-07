@@ -94,7 +94,7 @@ hit1/
 ### 4. Ejecución del servidor
 
 Build imagen del servidor:
-```bash
+```bash y Windows
 cd hit1/servidor
 docker build -t servidor-hit1 .
 ```
@@ -108,8 +108,12 @@ docker run -d \
   servidor-hit1
 ```
 
+```Windows
+docker run -d -p 5001:8080 -v /var/run/docker.sock:/var/run/docker.sock --name servidor servidor-hit1
+```
+
 Verificar que está corriendo:
-```bash
+```bash y Windows
 curl http://localhost:5001/health
 ```
 
@@ -129,14 +133,8 @@ curl -X POST http://localhost:5001/getRemoteTask \
   }'
 ```
 
-Ejemplo — hashing:
-```bash
-curl -X POST http://localhost:5001/getRemoteTask \
-  -H "Content-Type: application/json" \
-  -d '{
-    "servicio": "hash",
-    "payload": {"input": "hola", "algoritmo": "sha256"}
-  }'
+```Windows
+curl.exe --% -X POST http://localhost:5001/getRemoteTask -H "Content-Type: application/json" -d "{ \"servicio\": \"texto\", \"payload\": {\"texto\": \"hola mundo\"} }"
 ```
 
 Resultado esperado:
@@ -147,26 +145,48 @@ Resultado esperado:
 }
 ```
 
+
+Ejemplo — hashing:
+```bash
+curl -X POST http://localhost:5001/getRemoteTask \
+  -H "Content-Type: application/json" \
+  -d '{
+    "servicio": "hash",
+    "payload": {"input": "hola", "algoritmo": "sha256"}
+  }'
+```
+
+```Windows
+curl.exe --% -X POST http://localhost:5001/getRemoteTask -H "Content-Type: application/json" -d "{ \"servicio\": \"hash\", \"payload\": {\"input\": \"hola\", \"algoritmo\": \"sha256\"} }"
+```
+
+Resultado esperado:
+```json
+{
+  "servicio": "hash",
+  "resultado": {"algoritmo":"sha256", "hash":"b221d9dbb083a7f33428d7c2a3c3198ae925614d70210e28716ccaa7cd4ddb79"}
+}
+```
+
 ---
 
 ### 6. Ejecución de tests
 
+* Desde el directorio hit1/
+
 Servicio A:
-```bash
-cd hit1/servicio_a
-pytest tests/test_servicio_a.py -v
+```bash y Windows
+pytest servicio_a/tests/ -v
 ```
 
 Servicio B:
-```bash
-cd hit1/servicio_b
-pytest tests/test_servicio_b.py -v
+```bash y Windows
+pytest servicio_b/tests/ -v
 ```
 
 Servidor:
-```bash
-cd hit1/servidor
-pytest tests/ -v
+```bash y Windows
+pytest servidor/tests/ -v
 ```
 
 ---
