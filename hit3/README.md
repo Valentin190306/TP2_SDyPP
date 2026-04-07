@@ -27,6 +27,9 @@ Software necesario para ejecutar el proyecto.
 hit3/
 ├── servidor/
 │   ├── app/
+│   │   ├── api.py
+│   │   ├── asignador.py
+│   │   ├── bully.py
 │   │   └── servidor.py
 │   ├── tests/
 │   │   └── test_servidor.py
